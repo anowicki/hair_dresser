@@ -1,0 +1,48 @@
+version: '2.2'
+
+services:
+  mysql:
+    container_name: mysql
+    image: mysql:5.7
+    restart: always
+    ports:
+      - 3308:3306
+    volumes:
+      - ./conf/my.cnf:/etc/mysql/my.cnf
+      - ./.data/db:/var/lib/mysql
+    environment:
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_DATABASE: hair_dreser
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - 8888:80
+    links:
+      - mysql:db
+  php:
+    container_name: php
+    build:
+      context: php7-fpm
+      args:
+        TIMEZONE: Europe/Warsaw
+    volumes:
+      - .:/var/www/symfony
+      - ./logs/symfony:/var/www/symfony/var/log
+  nginx:
+    container_name: nginx
+    build: nginx
+    ports:
+      - 86:80
+    volumes_from:
+      - php
+    volumes:
+      - ./logs/nginx/:/var/log/nginx
+    links:
+      - mysql:db
+    environment:
+      PHP_XDEBUG_ENABLED: 1
+      XDEBUG_CONFIG: remote_host=10.254.254.254
